@@ -72,3 +72,6 @@ def submit(form: ApplicationForm, db: Session = Depends(get_db)):
             print("Telegram error:", e)
 
     return {"status": "success", "id": application.id}
+@app.options("/submit-application")
+async def options_handler():
+    return {"status": "ok"}
