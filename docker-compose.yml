@@ -1,3 +1,5 @@
+version: "3.9"
+
 services:
   db:
     image: postgres:16
@@ -10,6 +12,11 @@ services:
       POSTGRES_DB: ${PG_DB}
     volumes:
       - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PG_USER} -d ${PG_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   backend:
     build:
@@ -19,14 +26,14 @@ services:
     env_file:
       - ./.env
     environment:
-      # можно сразу дергать готовую строку подключения
       DATABASE_URL: ${DATABASE_URL}
       CORS_ORIGINS: ${CORS_ORIGINS}
       BOT_TOKEN: ${BOT_TOKEN}
       CHAT_ID: ${CHAT_ID}
     depends_on:
-      - db
-    # порт наружу не публикуем — бэк доступен только из сети compose (через nginx)
+      db:
+        condition: service_healthy
+    # наружу бэк НЕ торчит — доступен только для nginx внутри сети compose
     expose:
       - "8000"
 
@@ -38,6 +45,8 @@ services:
     ports:
       - "80:80"
     volumes:
+      # если фронт собираете и кладёте рядом — оставь строку ниже,
+      # если фронт хостится на Netlify — УДАЛИ её.
       - ./frontend/dist:/usr/share/nginx/html:ro
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
 

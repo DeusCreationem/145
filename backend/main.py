@@ -32,8 +32,8 @@ allow_origins = _split_env_list(os.getenv("CORS_ORIGINS"))
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allow_origins or ["*"],  # подожми позже, когда всё заведётся
-    allow_methods=["*"],
+    allow_origins=allow_origins or ["*"],   # сузим позже
+    allow_methods=["POST", "GET", "OPTIONS"],
     allow_headers=["*"],
 )
 
@@ -51,10 +51,12 @@ def get_db() -> Generator[Session, None, None]:
         db.close()
 
 # --- Routes ---
+@app.get("/health")
 @app.get("/api/health")
 def health():
     return {"status": "ok"}
 
+@app.post("/submit")
 @app.post("/api/submit")
 def submit(form: ApplicationForm, db: Session = Depends(get_db)):
     application = models.Application(name=form.name, phone=form.phone)
@@ -67,7 +69,6 @@ def submit(form: ApplicationForm, db: Session = Depends(get_db)):
         try:
             bot.send_message(CHAT_ID, msg)
         except Exception as e:
-            # не валим запрос, если телега офлайн
             print("Telegram error:", e)
 
     return {"status": "success", "id": application.id}
