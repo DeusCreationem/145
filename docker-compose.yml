@@ -25,18 +25,9 @@ services:
       CHAT_ID: ${CHAT_ID}
     depends_on:
       - db
-    expose:
-      - "8000"                # только во внутренней сети compose
-
-  nginx:
-    image: nginx:stable-alpine
-    restart: unless-stopped
-    depends_on:
-      - backend
+    # доступен только локально на VPS, системный Nginx будет проксировать
     ports:
-      - "80:80"               # наружу отдаёт только nginx
-    volumes:
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - "127.0.0.1:8000:8000"
 
 volumes:
   db-data:
